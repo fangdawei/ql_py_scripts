@@ -20,7 +20,7 @@ class MTFreeAutoTask:
             mt_base_url: str,
             mt_api_key: str,
     ) -> None:
-        self.tag = "mt_free_auto_task"
+        self.tag = "mt_free_auto"
         self.mt_base_url = mt_base_url
         self.mt_api_key = mt_api_key
         self.headers = {
@@ -93,7 +93,7 @@ class MTFreeAutoTask:
         return None
 
     def qb_add_torrent(self, link: str, tags: Union[str, List[str]] = None):
-        print("add torrent: %s" % str(link))
+        print("add torrent to qb: %s" % str(link))
         if tags is None:
             tags = []
         elif isinstance(tags, str):
@@ -105,39 +105,54 @@ class MTFreeAutoTask:
             tags=tags,
         )
 
-    def qb_remove_torrent(self, hashs: Union[str, List[str]]):
+    def qb_remove_torrents(self, hashs: Union[str, List[str]]):
         if isinstance(hashs, str):
             hashs = [hashs]
-        print("remove torrent: %s" % str(hashs))
+        print("remove torrent from qb: %s" % str(hashs))
         self.qb_client.torrents_delete(
             delete_files=True,
             hashs=hashs,
         )
 
-    def qb_remove_torrent_by_tag(self, tag: str):
+    def qb_remove_torrents_by_tag(self, tag: str):
         torrents = self.qb_client.torrents_info(
             tag=tag
         )
         for torrent in torrents:
-            self.qb_remove_torrent(torrent.hash)
+            self.qb_remove_torrents(torrent.hash)
+
+    def qb_clear_torrents(self):
+        torrents = self.qb_client.torrents_info(
+            tag=self.tag
+        )
+        torrent_clear_limit = (datetime.now() - timedelta(days=7)).timestamp()
+        remove_hashs = []
+        for torrent in torrents:
+            if torrent.added_on < torrent_clear_limit:
+                remove_hashs.append(torrent.hash)
+        if len(remove_hashs) > 0:
+            self.qb_remove_torrents(remove_hashs)
 
     def run(self):
-        print("MTFreeAutoTask run begin")
-        free_end_limit = (datetime.now() + timedelta(days=5)).timestamp()
-        torrent_remove_limit = (datetime.now() + timedelta(days=1)).timestamp()
+        print("auto task run begin")
+        self.qb_clear_torrents()
+        free_add_deadline = (datetime.now() + timedelta(days=5)).timestamp()
+        free_remove_deadline = (datetime.now() + timedelta(days=1)).timestamp()
         for mode in ["adult", "normal"]:
             for free_info in self.mt_search_free(mode):
                 id_tag = "mt_%s" % free_info["id"]
-                if free_info["free_end_time"] < torrent_remove_limit:
-                    self.qb_remove_torrent_by_tag(id_tag)
+                if free_info["free_end_time"] < free_remove_deadline:
+                    self.qb_remove_torrents_by_tag(id_tag)
                     continue
-                elif free_info["free_end_time"] < free_end_limit:
+                elif free_info["free_end_time"] < free_add_deadline:
+                    continue
+                elif free_info["size"] < 1024 * 1024 * 1024 * 15:
                     continue
                 else:
                     print("auto add free torrent: %s" % str(free_info))
                     torrent_link = self.mt_get_torrent_link(free_info["id"])
                     self.qb_add_torrent(torrent_link, [id_tag])
-        print("MTFreeAutoTask run end")
+        print("auto task run end")
 
 
 def run_task():
