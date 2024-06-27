@@ -146,7 +146,7 @@ class MTFreeAutoTask:
         free_remove_deadline = (datetime.now() + timedelta(days=1)).timestamp()
         for mode in ["adult", "normal"]:
             free_list = self.mt_search_free(mode)
-            print("find free torrent count: %d" % len(free_list))
+            print("[%s] free torrent count: %d" % (mode, len(free_list)))
             for free_info in free_list:
                 id_tag = "mt_%s" % free_info["id"]
                 if free_info["free_end_time"] < free_remove_deadline:
