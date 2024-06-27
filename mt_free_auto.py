@@ -67,9 +67,12 @@ class MTFreeAutoTask:
         for row in response.json()["data"]["data"]:
             if not row["status"]["discount"] == "FREE":
                 continue
-            free_end_time = datetime.strptime(
-                row["status"].get("discountEndTime"), "%Y-%m-%d %H:%M:%S"
-            ).timestamp()
+            if row["status"].get("discountEndTime"):
+                free_end_time = datetime.strptime(
+                    row["status"].get("discountEndTime"), "%Y-%m-%d %H:%M:%S"
+                ).timestamp()
+            else:
+                free_end_time = (datetime.now() + timedelta(days=30)).timestamp()
             free_list.append({
                 "id": row["id"],
                 "small_descr": row.get("smallDescr", ""),
