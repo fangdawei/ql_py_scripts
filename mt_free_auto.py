@@ -12,15 +12,16 @@ from datetime import datetime, timedelta
 
 class MTFreeAutoTask:
     def __init__(
-        self,
-        qb_url: str,
-        qb_user: str,
-        qb_password: str,
-        qb_port: int,
-        mt_base_url: str,
-        mt_api_key: str,
-        pause: bool = True,
+            self,
+            qb_url: str,
+            qb_user: str,
+            qb_password: str,
+            qb_port: int,
+            mt_base_url: str,
+            mt_api_key: str,
+            pause: bool = True,
     ) -> None:
+        self.tag = "mt_free_auto_task"
         self.mt_base_url = mt_base_url
         self.mt_api_key = mt_api_key
         self.headers = {
@@ -34,15 +35,6 @@ class MTFreeAutoTask:
         )
         self.pause = pause
 
-    def get_payload(self, mode="adult", page_num=1, page_size=50, categories=[]):
-        return {
-            "mode": mode,
-            "categories": categories,
-            "visible": 1,
-            "pageNumber": page_num,
-            "pageSize": page_size,
-        }
-
     @staticmethod
     def return_safe_response(response):
         if response.ok:
@@ -50,7 +42,7 @@ class MTFreeAutoTask:
         else:
             response.raise_for_status()
 
-    def requests(self, path, *args, **kwargs):
+    def mt_request(self, path, *args, **kwargs):
         sleep(5)
         response = requests.post(
             urljoin(self.mt_base_url, path),
@@ -60,56 +52,90 @@ class MTFreeAutoTask:
         )
         return self.return_safe_response(response)
 
-    def search(self, mode, return_id=True):
-        response = self.requests(
+    def mt_search_free(self, mode):
+        response = self.mt_request(
             "api/torrent/search",
-            json=self.get_payload(mode),
+            json={
+                "mode": mode,
+                "categories": [],
+                "visible": 1,
+                "pageNumber": 1,
+                "pageSize": 50,
+            },
         )
-        if return_id:
-            big_ids = []
-            for row in response.json()["data"]["data"]:
-                if not row["status"]["discount"] == "FREE":
-                    continue
-                free_end_time = datetime.strptime(
-                    row["status"].get("discountEndTime"), "%Y-%m-%d %H:%M:%S"
-                ).timestamp()
-                free_end_before = (datetime.now() + timedelta(days=5)).timestamp()
-                if free_end_time < free_end_before:
-                    continue
-                small_title = row.get("smallDescr", "")
-                print(f"{small_title}: {self.mt_base_url}detail/{row['id']}")
-                big_ids.append(row["id"])
+        free_list = []
+        for row in response.json()["data"]["data"]:
+            if not row["status"]["discount"] == "FREE":
+                continue
+            free_end_time = datetime.strptime(
+                row["status"].get("discountEndTime"), "%Y-%m-%d %H:%M:%S"
+            ).timestamp()
+            free_list.append({
+                "id": row["id"],
+                "small_descr": row.get("smallDescr", ""),
+                "free_end_time": free_end_time,
+                "size": int(row["size"]),
+                "seeders": int(row["status"].get("seeders")),
+                "leechers": int(row["status"].get("seeders"))
+            })
+        return free_list
 
-            return big_ids
-        else:
-            return []
-
-    def get_torrent(self, torrent_id, return_link=True):
-        response = self.requests(
+    def mt_get_torrent_link(self, torrent_id):
+        response = self.mt_request(
             "api/torrent/genDlToken",
             files={
                 "id": (None, torrent_id),
             },
         )
-        if return_link and response.json()["message"] == "SUCCESS":
-            print(f"downloading : {torrent_id}")
+        if response.json()["message"] == "SUCCESS":
             return response.json()["data"]
+        return None
 
-    def add_torrent(self, links: Union[str, List[str]]):
-        if isinstance(links, str):
-            links = [links]
+    def qb_add_torrent(self, link: str, tags: Union[str, List[str]] = None):
+        print("add torrent: %s" % str(link))
+        if tags is None:
+            tags = []
+        elif isinstance(tags, str):
+            tags = [tags]
+        tags.append(self.tag)
         self.qb_client.torrents_add(
-            urls=links,
+            urls=[link],
             is_paused=self.pause,
-            tags=["MT-FREE-AUTO"],
-            upload_limit=100000000,
+            tags=tags,
         )
 
-    def load(self):
+    def qb_remove_torrent(self, hashs: Union[str, List[str]]):
+        if isinstance(hashs, str):
+            hashs = [hashs]
+        print("remove torrent")
+        self.qb_client.torrents_delete(
+            delete_files=True,
+            hashs=hashs,
+        )
+
+    def qb_remove_torrent_by_tag(self, tag: str):
+        torrents = self.qb_client.torrents_info(
+            tag=tag
+        )
+        for torrent in torrents:
+            self.qb_remove_torrent(torrent.hash)
+
+    def run(self):
+        print("MTFreeAutoTask run begin")
+        free_end_limit = (datetime.now() + timedelta(days=5)).timestamp()
+        torrent_remove_limit = (datetime.now() + timedelta(days=1)).timestamp()
         for mode in ["adult", "normal"]:
-            for torrent_id in self.search(mode):
-                torrent_link = self.get_torrent(torrent_id)
-                self.add_torrent(torrent_link)
+            for free_info in self.mt_search_free(mode):
+                id_tag = "mt_%s" % free_info["id"]
+                if free_info["free_end_time"] < torrent_remove_limit:
+                    self.qb_remove_torrent_by_tag(id_tag)
+                    continue
+                elif free_info["free_end_time"] < free_end_limit:
+                    continue
+                else:
+                    torrent_link = self.mt_get_torrent_link(free_info["id"])
+                    self.qb_add_torrent(torrent_link, [id_tag])
+        print("MTFreeAutoTask run end")
 
 
 def __main__():
@@ -133,4 +159,4 @@ def __main__():
         raise Exception("Miss MT_API_KEY")
     MTFreeAutoTask(
         qb_url, qb_user, qb_password, int(qb_port), mt_base_url, mt_api_key
-    ).load()
+    ).run()
