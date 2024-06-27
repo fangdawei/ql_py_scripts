@@ -110,7 +110,7 @@ class MTFreeAutoTask:
     def qb_remove_torrent(self, hashs: Union[str, List[str]]):
         if isinstance(hashs, str):
             hashs = [hashs]
-        print("remove torrent")
+        print("remove torrent: %s" % str(hashs))
         self.qb_client.torrents_delete(
             delete_files=True,
             hashs=hashs,
@@ -136,6 +136,7 @@ class MTFreeAutoTask:
                 elif free_info["free_end_time"] < free_end_limit:
                     continue
                 else:
+                    print("auto add free torrent: %s" % str(free_info))
                     torrent_link = self.mt_get_torrent_link(free_info["id"])
                     self.qb_add_torrent(torrent_link, [id_tag])
         print("MTFreeAutoTask run end")
