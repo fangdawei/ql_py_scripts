@@ -19,6 +19,10 @@ class MTFreeAutoTask:
             qb_port: int,
             mt_base_url: str,
             mt_api_key: str,
+            add_free_days: int,
+            remove_free_days: int,
+            file_size_limit_gb: int,
+            clear_days: int
     ) -> None:
         self.tag = "mt_free_auto"
         self.mt_base_url = mt_base_url
@@ -32,6 +36,10 @@ class MTFreeAutoTask:
             username=qb_user,
             password=qb_password,
         )
+        self.add_free_days = add_free_days
+        self.remove_free_days = remove_free_days
+        self.file_size_limit = file_size_limit_gb * 1024 * 1024 * 1024
+        self.clear_days = clear_days
 
     @staticmethod
     def return_safe_response(response):
@@ -125,7 +133,7 @@ class MTFreeAutoTask:
         torrents = self.qb_client.torrents_info(
             tag=self.tag
         )
-        torrent_clear_limit = (datetime.now() - timedelta(days=7)).timestamp()
+        torrent_clear_limit = (datetime.now() - timedelta(days=self.clear_days)).timestamp()
         remove_hashs = []
         for torrent in torrents:
             if torrent.added_on < torrent_clear_limit:
@@ -142,8 +150,8 @@ class MTFreeAutoTask:
     def run(self):
         print("auto task run begin")
         self.qb_clear_torrents()
-        free_add_deadline = (datetime.now() + timedelta(days=5)).timestamp()
-        free_remove_deadline = (datetime.now() + timedelta(days=1)).timestamp()
+        free_add_deadline = (datetime.now() + timedelta(days=self.add_free_days)).timestamp()
+        free_remove_deadline = (datetime.now() + timedelta(days=self.remove_free_days)).timestamp()
         for mode in ["adult", "normal"]:
             free_list = self.mt_search_free(mode)
             print("[%s] free torrent count: %d" % (mode, len(free_list)))
@@ -154,7 +162,7 @@ class MTFreeAutoTask:
                     continue
                 elif free_info["free_end_time"] < free_add_deadline:
                     continue
-                elif free_info["size"] < 1024 * 1024 * 1024 * 15:
+                elif free_info["size"] < self.file_size_limit:
                     continue
                 elif self.qb_has_torrent_with_tag(id_tag):
                     continue
@@ -185,7 +193,11 @@ def run_task():
     if not mt_api_key:
         raise Exception("Miss MT_API_KEY")
     MTFreeAutoTask(
-        qb_url, qb_user, qb_password, int(qb_port), mt_base_url, mt_api_key
+        qb_url, qb_user, qb_password, int(qb_port), mt_base_url, mt_api_key,
+        int(os.environ.get("ADD_FREE_DAYS", "5")),
+        int(os.environ.get("REMOVE_FREE_DAYS", "1")),
+        int(os.environ.get("FILE_SIZE_LIMIT_GB", "15")),
+        int(os.environ.get("CLEAR_DAYS", "7"))
     ).run()
 
 
