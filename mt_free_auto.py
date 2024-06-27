@@ -138,25 +138,28 @@ class MTFreeAutoTask:
         print("MTFreeAutoTask run end")
 
 
-def __main__():
+def run_task():
     qb_url = os.environ["QB_URL"]
-    if qb_url:
+    if not qb_url:
         raise Exception("Miss QB_URL")
     qb_user = os.environ["QB_USER"]
-    if qb_user:
+    if not qb_user:
         raise Exception("Miss QB_USER")
     qb_password = os.environ["QB_PASSWORD"]
-    if qb_password:
+    if not qb_password:
         raise Exception("Miss QB_PASSWORD")
     qb_port = os.environ["QB_PORT"]
-    if qb_port:
+    if not qb_port:
         raise Exception("Miss QB_PORT")
     mt_base_url = os.environ["MT_BASE_URL"]
-    if mt_base_url:
+    if not mt_base_url:
         raise Exception("Miss MT_BASE_URL")
     mt_api_key = os.environ["MT_API_KEY"]
-    if mt_api_key:
+    if not mt_api_key:
         raise Exception("Miss MT_API_KEY")
     MTFreeAutoTask(
         qb_url, qb_user, qb_password, int(qb_port), mt_base_url, mt_api_key
     ).run()
+
+
+run_task()
