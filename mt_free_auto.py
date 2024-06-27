@@ -147,6 +147,11 @@ class MTFreeAutoTask:
         )
         return len(torrents) > 0
 
+    def qb_delete_tags(self, tags: Union[str, List[str]]):
+        if isinstance(tags, str):
+            tags = [tags]
+        self.qb_client.torrents_delete_tags(tags)
+
     def run(self):
         print("auto task run begin")
         self.qb_clear_torrents()
@@ -159,6 +164,7 @@ class MTFreeAutoTask:
                 id_tag = "mt_%s" % free_info["id"]
                 if free_info["free_end_time"] < free_remove_deadline:
                     self.qb_remove_torrents_by_tag(id_tag)
+                    self.qb_delete_tags(id_tag)
                     continue
                 elif free_info["free_end_time"] < free_add_deadline:
                     continue
