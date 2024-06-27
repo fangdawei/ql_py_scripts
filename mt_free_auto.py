@@ -19,7 +19,6 @@ class MTFreeAutoTask:
             qb_port: int,
             mt_base_url: str,
             mt_api_key: str,
-            pause: bool = True,
     ) -> None:
         self.tag = "mt_free_auto_task"
         self.mt_base_url = mt_base_url
@@ -33,7 +32,6 @@ class MTFreeAutoTask:
             username=qb_user,
             password=qb_password,
         )
-        self.pause = pause
 
     @staticmethod
     def return_safe_response(response):
@@ -103,7 +101,7 @@ class MTFreeAutoTask:
         tags.append(self.tag)
         self.qb_client.torrents_add(
             urls=[link],
-            is_paused=self.pause,
+            is_paused=False,
             tags=tags,
         )
 
