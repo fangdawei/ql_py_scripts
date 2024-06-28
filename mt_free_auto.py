@@ -12,17 +12,17 @@ from datetime import datetime, timedelta
 
 class MTFreeAutoTask:
     def __init__(
-            self,
-            qb_url: str,
-            qb_user: str,
-            qb_password: str,
-            qb_port: int,
-            mt_base_url: str,
-            mt_api_key: str,
-            add_free_days: int,
-            remove_free_hours: int,
-            file_size_limit_gb: int,
-            clear_days: int
+        self,
+        qb_url: str,
+        qb_user: str,
+        qb_password: str,
+        qb_port: int,
+        mt_base_url: str,
+        mt_api_key: str,
+        add_free_days: int,
+        remove_free_hours: int,
+        file_size_limit_gb: int,
+        clear_days: int,
     ) -> None:
         print("add_free_days: %d" % add_free_days)
         print("remove_free_hours: %d" % remove_free_hours)
@@ -83,14 +83,16 @@ class MTFreeAutoTask:
                 ).timestamp()
             else:
                 free_end_time = (datetime.now() + timedelta(days=30)).timestamp()
-            free_list.append({
-                "id": row["id"],
-                "small_descr": row.get("smallDescr", ""),
-                "free_end_time": free_end_time,
-                "size": int(row["size"]),
-                "seeders": int(row["status"].get("seeders")),
-                "leechers": int(row["status"].get("seeders"))
-            })
+            free_list.append(
+                {
+                    "id": row["id"],
+                    "small_descr": row.get("smallDescr", ""),
+                    "free_end_time": free_end_time,
+                    "size": int(row["size"]),
+                    "seeders": int(row["status"].get("seeders")),
+                    "leechers": int(row["status"].get("seeders")),
+                }
+            )
         return free_list
 
     def mt_get_torrent_link(self, torrent_id):
@@ -127,17 +129,15 @@ class MTFreeAutoTask:
         )
 
     def qb_remove_torrents_by_tag(self, tag: str):
-        torrents = self.qb_client.torrents_info(
-            tag=tag
-        )
+        torrents = self.qb_client.torrents_info(tag=tag)
         for torrent in torrents:
             self.qb_remove_torrents(torrent.hash)
 
     def qb_clear_torrents(self):
-        torrents = self.qb_client.torrents_info(
-            tag=self.tag
-        )
-        torrent_clear_limit = (datetime.now() - timedelta(days=self.clear_days)).timestamp()
+        torrents = self.qb_client.torrents_info(tag=self.tag)
+        torrent_clear_limit = (
+            datetime.now() - timedelta(days=self.clear_days)
+        ).timestamp()
         remove_hashs = []
         for torrent in torrents:
             if torrent.added_on < torrent_clear_limit:
@@ -146,9 +146,7 @@ class MTFreeAutoTask:
             self.qb_remove_torrents(remove_hashs)
 
     def qb_has_torrent_with_tag(self, tag: str) -> bool:
-        torrents = self.qb_client.torrents_info(
-            tag=self.tag
-        )
+        torrents = self.qb_client.torrents_info(tag=self.tag)
         return len(torrents) > 0
 
     def qb_delete_tags(self, tags: Union[str, List[str]]):
@@ -159,17 +157,22 @@ class MTFreeAutoTask:
     def run(self):
         print("auto task run begin")
         self.qb_clear_torrents()
-        free_add_deadline = (datetime.now() + timedelta(days=self.add_free_days)).timestamp()
-        free_remove_deadline = (datetime.now() + timedelta(hours=self.remove_free_hours)).timestamp()
+        free_add_deadline = (
+            datetime.now() + timedelta(days=self.add_free_days)
+        ).timestamp()
+        free_remove_deadline = (
+            datetime.now() + timedelta(hours=self.remove_free_hours)
+        ).timestamp()
         for mode in ["adult", "normal"]:
             free_list = self.mt_search_free(mode)
             print("[%s] free torrent count: %d" % (mode, len(free_list)))
             for free_info in free_list:
                 id_tag = "mt_%s" % free_info["id"]
                 if free_info["free_end_time"] < free_remove_deadline:
-                    print("auto remove free torrent: %s" % str(free_info))
-                    self.qb_remove_torrents_by_tag(id_tag)
-                    self.qb_delete_tags(id_tag)
+                    if self.qb_has_torrent_with_tag(id):
+                        print("auto remove free torrent: %s" % str(free_info))
+                        self.qb_remove_torrents_by_tag(id_tag)
+                        self.qb_delete_tags(id_tag)
                     continue
                 elif free_info["free_end_time"] < free_add_deadline:
                     continue
@@ -204,11 +207,16 @@ def run_task():
     if not mt_api_key:
         raise Exception("Miss MT_API_KEY")
     MTFreeAutoTask(
-        qb_url, qb_user, qb_password, int(qb_port), mt_base_url, mt_api_key,
+        qb_url,
+        qb_user,
+        qb_password,
+        int(qb_port),
+        mt_base_url,
+        mt_api_key,
         int(os.environ.get("MT_AUTO_ADD_FREE_DAYS", "5")),
         int(os.environ.get("MT_AUTO_REMOVE_FREE_HOURS", "12")),
         int(os.environ.get("MT_AUTO_FILE_SIZE_LIMIT_GB", "15")),
-        int(os.environ.get("MT_AUTO_CLEAR_DAYS", "7"))
+        int(os.environ.get("MT_AUTO_CLEAR_DAYS", "7")),
     ).run()
 
 
