@@ -24,6 +24,10 @@ class MTFreeAutoTask:
             file_size_limit_gb: int,
             clear_days: int
     ) -> None:
+        print("add_free_days: %d" % add_free_days)
+        print("remove_free_hours: %d" % remove_free_hours)
+        print("file_size_limit_gb: %d" % file_size_limit_gb)
+        print("clear_days: %d" % clear_days)
         self.tag = "mt_free_auto"
         self.mt_base_url = mt_base_url
         self.mt_api_key = mt_api_key
