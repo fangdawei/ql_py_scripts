@@ -167,6 +167,7 @@ class MTFreeAutoTask:
             for free_info in free_list:
                 id_tag = "mt_%s" % free_info["id"]
                 if free_info["free_end_time"] < free_remove_deadline:
+                    print("auto remove free torrent: %s" % str(free_info))
                     self.qb_remove_torrents_by_tag(id_tag)
                     self.qb_delete_tags(id_tag)
                     continue
