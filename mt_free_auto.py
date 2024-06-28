@@ -200,10 +200,10 @@ def run_task():
         raise Exception("Miss MT_API_KEY")
     MTFreeAutoTask(
         qb_url, qb_user, qb_password, int(qb_port), mt_base_url, mt_api_key,
-        int(os.environ.get("ADD_FREE_DAYS", "5")),
-        int(os.environ.get("REMOVE_FREE_HOURS", "12")),
-        int(os.environ.get("FILE_SIZE_LIMIT_GB", "15")),
-        int(os.environ.get("CLEAR_DAYS", "7"))
+        int(os.environ.get("MT_AUTO_ADD_FREE_DAYS", "5")),
+        int(os.environ.get("MT_AUTO_REMOVE_FREE_HOURS", "12")),
+        int(os.environ.get("MT_AUTO_FILE_SIZE_LIMIT_GB", "15")),
+        int(os.environ.get("MT_AUTO_CLEAR_DAYS", "7"))
     ).run()
 
 
