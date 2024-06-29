@@ -154,6 +154,18 @@ class MTFreeAutoTask:
             tags = [tags]
         self.qb_client.torrents_delete_tags(tags)
 
+    @staticmethod
+    def free_info_print_str(free_info) -> str:
+        result = {}
+        for k, v in free_info:
+            if k == "free_end_time":
+                result[k] = datetime.fromtimestamp(v).strftime("%Y-%m-%d %H:%M:%S")
+            elif k == "size":
+                result[k] = "%d GB" % int(v / (1024 * 1024 * 1024))
+            else:
+                result[k] = v
+        return str(result)
+
     def run(self):
         print("auto task run begin")
         self.qb_clear_torrents()
@@ -170,7 +182,10 @@ class MTFreeAutoTask:
                 id_tag = "mt_%s" % free_info["id"]
                 if free_info["free_end_time"] < free_remove_deadline:
                     if self.qb_has_torrent_with_tag(id):
-                        print("auto remove free torrent: %s" % str(free_info))
+                        print(
+                            "auto remove free torrent: %s"
+                            % self.free_info_print_str(free_info)
+                        )
                         self.qb_remove_torrents_by_tag(id_tag)
                         self.qb_delete_tags(id_tag)
                     continue
@@ -181,7 +196,10 @@ class MTFreeAutoTask:
                 elif self.qb_has_torrent_with_tag(id_tag):
                     continue
                 else:
-                    print("auto add free torrent: %s" % str(free_info))
+                    print(
+                        "auto add free torrent: %s"
+                        % self.free_info_print_str(free_info)
+                    )
                     torrent_link = self.mt_get_torrent_link(free_info["id"])
                     self.qb_add_torrent(torrent_link, [id_tag])
         print("auto task run end")
