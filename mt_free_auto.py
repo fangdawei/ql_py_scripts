@@ -159,9 +159,9 @@ class MTFreeAutoTask:
         self.qb_client.torrents_delete_tags(tags)
 
     @staticmethod
-    def free_info_print_str(free_info) -> str:
+    def free_info_print_str(free_info: dict) -> str:
         result = {}
-        for k, v in free_info:
+        for k, v in free_info.items():
             if k == "free_end_time":
                 result[k] = datetime.fromtimestamp(v).strftime("%Y-%m-%d %H:%M:%S")
             elif k == "size":
@@ -171,7 +171,7 @@ class MTFreeAutoTask:
         return str(result)
 
     @staticmethod
-    def free_info_msg_str(free_info) -> str:
+    def free_info_msg_str(free_info: dict) -> str:
         free_end_time = datetime.fromtimestamp(free_info["free_end_time"]).strftime(
             "%Y-%m-%d %H:%M:%S"
         )
