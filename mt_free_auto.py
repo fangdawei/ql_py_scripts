@@ -178,7 +178,7 @@ class MTFreeAutoTask:
         return (
             f"种子名: {free_info['name']}\n"
             + f"种子描述: {free_info['small_descr']}\n"
-            + f"文件大小: {free_info['size']/BYTES_GB}\n"
+            + f"文件大小: {int(free_info['size']/BYTES_GB)} GB\n"
             + f"做种数: {free_info['seeders']}\n"
             + f"下载数: {free_info['leechers']}\n"
             + f"FREE到期时间: {free_end_time}"
