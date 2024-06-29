@@ -146,7 +146,7 @@ class MTFreeAutoTask:
             self.qb_remove_torrents(remove_hashs)
 
     def qb_has_torrent_with_tag(self, tag: str) -> bool:
-        torrents = self.qb_client.torrents_info(tag=self.tag)
+        torrents = self.qb_client.torrents_info(tag=tag)
         return len(torrents) > 0
 
     def qb_delete_tags(self, tags: Union[str, List[str]]):
