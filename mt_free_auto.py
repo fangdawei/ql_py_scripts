@@ -9,6 +9,8 @@ from time import sleep
 from urllib.parse import urljoin
 from datetime import datetime, timedelta
 
+BYTES_GB = 1024 * 1024 * 1024
+
 
 class MTFreeAutoTask:
     def __init__(
@@ -42,7 +44,7 @@ class MTFreeAutoTask:
         )
         self.add_free_days = add_free_days
         self.remove_free_hours = remove_free_hours
-        self.file_size_limit = file_size_limit_gb * 1024 * 1024 * 1024
+        self.file_size_limit = file_size_limit_gb * BYTES_GB
         self.clear_days = clear_days
 
     @staticmethod
@@ -87,6 +89,7 @@ class MTFreeAutoTask:
             free_list.append(
                 {
                     "id": row["id"],
+                    "name": row["name"],
                     "small_descr": row.get("smallDescr", ""),
                     "free_end_time": free_end_time,
                     "size": int(row["size"]),
@@ -162,10 +165,20 @@ class MTFreeAutoTask:
             if k == "free_end_time":
                 result[k] = datetime.fromtimestamp(v).strftime("%Y-%m-%d %H:%M:%S")
             elif k == "size":
-                result[k] = "%d GB" % int(v / (1024 * 1024 * 1024))
+                result[k] = "%d GB" % int(v / BYTES_GB)
             else:
                 result[k] = v
         return str(result)
+
+    @staticmethod
+    def free_info_msg_str(free_info) -> str:
+        return (
+            f"种子名：{free_info['name']}\n"
+            + f"种子描述：{free_info['small_descr']}\n"
+            + f"文件大小：{free_info['size']/BYTES_GB}\n"
+            + f"做种数：{free_info['seeders']}\n"
+            + f"下载数：{free_info['leechers']}"
+        )
 
     def run(self):
         print("auto task run begin")
@@ -203,7 +216,39 @@ class MTFreeAutoTask:
                     )
                     torrent_link = self.mt_get_torrent_link(free_info["id"])
                     self.qb_add_torrent(torrent_link, [id_tag])
+                    send_telegram_msg(
+                        "MT FREE 下载通知", self.free_info_msg_str(free_info)
+                    )
         print("auto task run end")
+
+
+def send_telegram_msg(title: str, content: str):
+    """
+    使用 telegram 机器人 推送消息。
+    """
+    if not os.environ.get("MT_AUTO_TG_BOT_TOKEN") or not os.environ.get(
+        "MT_AUTO_TG_CHAT_ID"
+    ):
+        print("MT_AUTO_TG_BOT_TOKEN or MT_AUTO_TG_CHAT_ID 未设置! 取消推送! ")
+        return
+    tg_bot_token = os.environ.get("MT_AUTO_TG_BOT_TOKEN")
+    tg_chat_id = os.environ.get("MT_AUTO_TG_CHAT_ID")
+    print("TG 消息推送中...")
+    tg_api_host = "https://api.telegram.org"
+    if os.environ.get("TG_API_HOST"):
+        url = os.environ.get("TG_API_HOST")
+    url = f"{tg_api_host}/bot{tg_bot_token}/sendMessage"
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    payload = {
+        "chat_id": str(tg_chat_id),
+        "text": f"{title}\n\n{content}",
+        "disable_web_page_preview": "true",
+    }
+    response = requests.post(url=url, headers=headers, params=payload).json()
+    if response["ok"]:
+        print("TG 推送成功！")
+    else:
+        print("TG 推送失败！")
 
 
 def run_task():
