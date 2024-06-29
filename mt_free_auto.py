@@ -94,7 +94,7 @@ class MTFreeAutoTask:
                     "free_end_time": free_end_time,
                     "size": int(row["size"]),
                     "seeders": int(row["status"].get("seeders")),
-                    "leechers": int(row["status"].get("seeders")),
+                    "leechers": int(row["status"].get("leechers")),
                 }
             )
         return free_list
@@ -207,7 +207,7 @@ class MTFreeAutoTask:
                         self.qb_remove_torrents_by_tag(id_tag)
                         self.qb_delete_tags(id_tag)
                         send_telegram_msg(
-                            "MT FREE种子删除通知", self.free_info_msg_str(free_info)
+                            "MT FREE 种子删除通知", self.free_info_msg_str(free_info)
                         )
                     continue
                 elif free_info["free_end_time"] < free_add_deadline:
@@ -224,7 +224,7 @@ class MTFreeAutoTask:
                     torrent_link = self.mt_get_torrent_link(free_info["id"])
                     self.qb_add_torrent(torrent_link, [id_tag])
                     send_telegram_msg(
-                        "MT FREE种子下载通知", self.free_info_msg_str(free_info)
+                        "MT FREE 种子下载通知", self.free_info_msg_str(free_info)
                     )
         print("auto task run end")
 
