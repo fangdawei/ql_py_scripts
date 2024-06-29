@@ -63,6 +63,7 @@ class MTFreeAutoTask:
         return self.return_safe_response(response)
 
     def mt_search_free(self, mode):
+        print("mt free in [%s] searching..." % mode)
         response = self.mt_request(
             "api/torrent/search",
             json={
