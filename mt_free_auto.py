@@ -217,7 +217,7 @@ class MTFreeAutoTask:
                     torrent_link = self.mt_get_torrent_link(free_info["id"])
                     self.qb_add_torrent(torrent_link, [id_tag])
                     send_telegram_msg(
-                        "MT FREE 下载通知", self.free_info_msg_str(free_info)
+                        "MT FREE种子下载通知", self.free_info_msg_str(free_info)
                     )
         print("auto task run end")
 
@@ -246,9 +246,9 @@ def send_telegram_msg(title: str, content: str):
     }
     response = requests.post(url=url, headers=headers, params=payload).json()
     if response["ok"]:
-        print("TG 推送成功！")
+        print("TG 消息推送成功！")
     else:
-        print("TG 推送失败！")
+        print("TG 消息推送失败！")
 
 
 def run_task():
