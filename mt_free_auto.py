@@ -229,11 +229,11 @@ def send_telegram_msg(title: str, content: str):
     if not os.environ.get("MT_AUTO_TG_BOT_TOKEN") or not os.environ.get(
         "MT_AUTO_TG_CHAT_ID"
     ):
-        print("MT_AUTO_TG_BOT_TOKEN or MT_AUTO_TG_CHAT_ID 未设置! 取消推送! ")
+        print("MT_AUTO_TG_BOT_TOKEN or MT_AUTO_TG_CHAT_ID not set! skip TG msg!")
         return
     tg_bot_token = os.environ.get("MT_AUTO_TG_BOT_TOKEN")
     tg_chat_id = os.environ.get("MT_AUTO_TG_CHAT_ID")
-    print("TG 消息推送中...")
+    print("TG msg sending...")
     tg_api_host = "https://api.telegram.org"
     if os.environ.get("TG_API_HOST"):
         url = os.environ.get("TG_API_HOST")
@@ -246,9 +246,9 @@ def send_telegram_msg(title: str, content: str):
     }
     response = requests.post(url=url, headers=headers, params=payload).json()
     if response["ok"]:
-        print("TG 消息推送成功！")
+        print("TG msg send success!")
     else:
-        print("TG 消息推送失败！")
+        print("TG msg send fail!")
 
 
 def run_task():
