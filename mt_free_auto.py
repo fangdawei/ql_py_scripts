@@ -202,6 +202,9 @@ class MTFreeAutoTask:
                         )
                         self.qb_remove_torrents_by_tag(id_tag)
                         self.qb_delete_tags(id_tag)
+                        send_telegram_msg(
+                            "MT FREE种子删除通知", self.free_info_msg_str(free_info)
+                        )
                     continue
                 elif free_info["free_end_time"] < free_add_deadline:
                     continue
