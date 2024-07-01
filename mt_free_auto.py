@@ -4,6 +4,7 @@ import os
 
 import requests
 import qbittorrentapi
+import telegram
 from typing import List, Union
 from time import sleep
 from urllib.parse import urljoin
@@ -85,7 +86,7 @@ class MTFreeAutoTask:
                     row["status"].get("discountEndTime"), "%Y-%m-%d %H:%M:%S"
                 ).timestamp()
             else:
-                free_end_time = (datetime.now() + timedelta(days=30)).timestamp()
+                free_end_time = (datetime.now() + timedelta(days=365)).timestamp()
             free_list.append(
                 {
                     "id": row["id"],
@@ -93,8 +94,8 @@ class MTFreeAutoTask:
                     "small_descr": row.get("smallDescr", ""),
                     "free_end_time": free_end_time,
                     "size": int(row["size"]),
-                    "seeders": int(row["status"].get("seeders")),
-                    "leechers": int(row["status"].get("leechers")),
+                    "seeders": int(row["status"].get("seeders", 0)),
+                    "leechers": int(row["status"].get("leechers", 0)),
                 }
             )
         return free_list
@@ -233,29 +234,26 @@ def send_telegram_msg(title: str, content: str):
     """
     使用 telegram 机器人 推送消息。
     """
-    if not os.environ.get("MT_AUTO_TG_BOT_TOKEN") or not os.environ.get(
-        "MT_AUTO_TG_CHAT_ID"
-    ):
-        print("MT_AUTO_TG_BOT_TOKEN or MT_AUTO_TG_CHAT_ID not set! skip TG msg!")
+    if not os.environ.get("MT_AUTO_TG_BOT_TOKEN"):
+        print("MT_AUTO_TG_BOT_TOKEN not set! skip TG msg!")
         return
     tg_bot_token = os.environ.get("MT_AUTO_TG_BOT_TOKEN")
+    if not os.environ.get("MT_AUTO_TG_CHAT_ID"):
+        print("MT_AUTO_TG_CHAT_ID not set! skip TG msg!")
+        return
     tg_chat_id = os.environ.get("MT_AUTO_TG_CHAT_ID")
     print("TG msg sending...")
-    tg_api_host = "https://api.telegram.org"
-    if os.environ.get("TG_API_HOST"):
-        url = os.environ.get("TG_API_HOST")
-    url = f"{tg_api_host}/bot{tg_bot_token}/sendMessage"
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    payload = {
-        "chat_id": str(tg_chat_id),
-        "text": f"{title}\n\n{content}",
-        "disable_web_page_preview": "true",
-    }
-    response = requests.post(url=url, headers=headers, params=payload).json()
-    if response["ok"]:
+    bot = telegram.Bot(token=tg_bot_token)
+    try:
+        bot.send_message(
+            chat_id=str(tg_chat_id),
+            text=f"{title}\n\n{content}",
+            disable_web_page_preview=True,
+        )
         print("TG msg send success!")
-    else:
-        print("TG msg send fail!")
+        bot.close
+    except Exception as e:
+        print("TG msg send fail! %s" % str(e))
 
 
 def run_task():
