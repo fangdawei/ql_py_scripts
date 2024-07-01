@@ -3,6 +3,7 @@
 import os
 
 import requests
+import asyncio
 import qbittorrentapi
 import telegram
 from typing import List, Union
@@ -245,13 +246,14 @@ def send_telegram_msg(title: str, content: str):
     print("TG msg sending...")
     bot = telegram.Bot(token=tg_bot_token)
     try:
-        bot.send_message(
-            chat_id=str(tg_chat_id),
-            text=f"{title}\n\n{content}",
-            disable_web_page_preview=True,
+        asyncio.run(
+            bot.send_message(
+                chat_id=str(tg_chat_id),
+                text=f"{title}\n\n{content}",
+                disable_web_page_preview=True,
+            )
         )
         print("TG msg send success!")
-        bot.close
     except Exception as e:
         print("TG msg send fail! %s" % str(e))
 
