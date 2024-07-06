@@ -131,7 +131,7 @@ class MTFreeAutoTask:
         print("remove torrent from qb: %s" % str(hashs))
         self.qb_client.torrents_delete(
             delete_files=True,
-            hashs=hashs,
+            torrent_hashes=hashs,
         )
 
     def qb_remove_torrents_by_tag(self, tag: str):
