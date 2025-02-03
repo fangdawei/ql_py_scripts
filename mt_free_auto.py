@@ -23,12 +23,12 @@ class MTFreeAutoTask:
         qb_port: int,
         mt_base_url: str,
         mt_api_key: str,
-        add_free_days: int,
+        add_free_hours: int,
         remove_free_hours: int,
         file_size_limit_gb: int,
         clear_days: int,
     ) -> None:
-        print("add_free_days: %d" % add_free_days)
+        print("add_free_hours: %d" % add_free_hours)
         print("remove_free_hours: %d" % remove_free_hours)
         print("file_size_limit_gb: %d" % file_size_limit_gb)
         print("clear_days: %d" % clear_days)
@@ -44,7 +44,7 @@ class MTFreeAutoTask:
             username=qb_user,
             password=qb_password,
         )
-        self.add_free_days = add_free_days
+        self.add_free_hours = add_free_hours
         self.remove_free_hours = remove_free_hours
         self.file_size_limit = file_size_limit_gb * BYTES_GB
         self.clear_days = clear_days
@@ -190,7 +190,7 @@ class MTFreeAutoTask:
         print("auto task run begin")
         self.qb_clear_torrents()
         free_add_deadline = (
-            datetime.now() + timedelta(days=self.add_free_days)
+            datetime.now() + timedelta(hours=self.add_free_hours)
         ).timestamp()
         free_remove_deadline = (
             datetime.now() + timedelta(hours=self.remove_free_hours)
@@ -284,8 +284,8 @@ def run_task():
         int(qb_port),
         mt_base_url,
         mt_api_key,
-        int(os.environ.get("MT_AUTO_ADD_FREE_DAYS", "5")),
-        int(os.environ.get("MT_AUTO_REMOVE_FREE_HOURS", "12")),
+        int(os.environ.get("MT_AUTO_ADD_FREE_HOURS", "72")),
+        int(os.environ.get("MT_AUTO_REMOVE_FREE_HOURS", "6")),
         int(os.environ.get("MT_AUTO_FILE_SIZE_LIMIT_GB", "15")),
         int(os.environ.get("MT_AUTO_CLEAR_DAYS", "7")),
     ).run()
